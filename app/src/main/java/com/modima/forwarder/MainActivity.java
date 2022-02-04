@@ -8,7 +8,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
@@ -160,11 +159,10 @@ public class MainActivity extends Activity {
                         }
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage(), e);
-                        Message msg = handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage());
-                        handler.sendMessage(msg);
+                        handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage()));
                     }
-                    Message msg = handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
-                    handler.sendMessage(msg);
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,""));
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
 
@@ -172,8 +170,7 @@ public class MainActivity extends Activity {
             public void onLost(Network network) {
                 super.onLost(network);
                 wifiNet = null;
-                Message msg = handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
-                handler.sendMessage(msg);
+                handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
             }
 
             @Override
@@ -200,11 +197,10 @@ public class MainActivity extends Activity {
                         }
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage(), e);
-                        Message msg = handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage());
-                        handler.sendMessage(msg);
+                        handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage()));
                     }
-                    Message msg = handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
-                    handler.sendMessage(msg);
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,""));
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
 
@@ -212,8 +208,7 @@ public class MainActivity extends Activity {
             public void onLost(Network network) {
                 super.onLost(network);
                 cellNet = null;
-                Message msg = handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
-                handler.sendMessage(msg);
+                handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
             }
 
             @Override

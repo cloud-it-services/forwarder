@@ -41,8 +41,7 @@ public class WifiListener extends Thread {
             } catch (SocketTimeoutException e) {
             } catch (Exception e) {
                 Log.e(TAG,e.getMessage(),e);
-                Message msg = handler.obtainMessage(MainActivity.MSG_ERROR,0,0,e.getMessage());
-                handler.sendMessage(msg);
+                handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,e.getMessage()));
             }
         }
     }
