@@ -113,8 +113,8 @@ public class MainActivity extends Activity {
             return true;
         });
 
-        new CellularListener(handler).start();
         new WifiListener(handler).start();
+        new CellularListener(handler).start();
 
         this.requestNetworks();
         this.updateStatus();

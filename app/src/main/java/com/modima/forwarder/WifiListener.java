@@ -27,17 +27,19 @@ public class WifiListener extends Thread {
                     Thread.sleep(1000);
                     continue;
                 }
+                Log.d(TAG, "wait for packet from wifi...", null);
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                Log.d(TAG, "wait for packet from cellular...", null);
-                MainActivity.cellSocket.receive(packet);
-                Log.d(TAG, "...cellular packet received", null);
-                if (MainActivity.dstIP != null && MainActivity.dstPort != 0) {
-                    Log.d(TAG, "forward cellular packet...", null);
-                    MainActivity.wifiSocket.send(new DatagramPacket(packet.getData(), packet.getLength(),MainActivity.dstIP, MainActivity.dstPort));
-                    Log.d(TAG, "... cellular forwarded to " + MainActivity.dstIP.getHostName() + ":" + MainActivity.dstPort, null);
-                    Message msg = handler.obtainMessage(MainActivity.MSG_ERROR,0,0,"");
-                    handler.sendMessage(msg);
-                }
+                MainActivity.wifiSocket.receive(packet);
+                MainActivity.dstIP = packet.getAddress();
+                MainActivity.dstPort = packet.getPort();
+                Log.d(TAG, "...wifi packet received from " + MainActivity.dstIP.getHostAddress() + ":" + MainActivity.dstPort, null);
+                Log.d(TAG, "send wifi packet...", null);
+                //packet.setAddress(InetAddress.getByAddress(new byte[] {8, 8, 8, 8})); // debugging (remove in production)
+                //packet.setPort(53); // debugging (remove in production)
+                MainActivity.cellSocket.send(new DatagramPacket(packet.getData(), packet.getLength(), packet.getAddress(), packet.getPort()));
+                Log.d(TAG, "...send wifi ok", null);
+                Message msg = handler.obtainMessage(MainActivity.MSG_ERROR,0,0,"");
+                handler.sendMessage(msg);
             } catch (SocketTimeoutException e) {
             } catch (Exception e) {
                 Log.e(TAG,e.getMessage(),e);
@@ -46,3 +48,4 @@ public class WifiListener extends Thread {
         }
     }
 }
+
