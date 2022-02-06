@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 
 public class SocksServer extends Thread {
@@ -63,8 +64,9 @@ public class SocksServer extends Thread {
             String targetIP = "";
             clientInStream.read(buff, 0, 1);
             if (buff[0] == 0x01) { // IPv4
-                clientInStream.read(buff, 0, 4);
-                targetIP = byte2int(buff[0]) + "." + byte2int(buff[1]) + "." + byte2int(buff[2]) + "." + byte2int(buff[3]);
+                byte[] ipBytes = new byte[4];
+                clientInStream.read(ipBytes, 0, ipBytes.length);
+                targetIP = InetAddress.getByAddress(ipBytes).getHostAddress();
             } else if (buff[0] == 0x03) { // domain name
                 clientInStream.read(buff, 0, 1); // read length
                 int len = buff[0];
@@ -72,7 +74,9 @@ public class SocksServer extends Thread {
                 domainName = new String(buff,0,len);
                 targetIP = MainActivity.cellNet.getByName(domainName).getHostAddress();
             } else { // IPv6
-                clientInStream.read(buff, 0, 16);
+                byte[] ipBytes = new byte[16];
+                clientInStream.read(buff, 0, ipBytes.length);
+                targetIP = InetAddress.getByAddress(ipBytes).getHostAddress();
             }
 
             // read destination port (Big-Endian)
@@ -100,8 +104,8 @@ public class SocksServer extends Thread {
             secondAckMessage[5] = localIP[1];   // 2nd byte of targetIP
             secondAckMessage[6] = localIP[2];   // 3rd byte of targetIP
             secondAckMessage[7] = localIP[3];   // 4th byte of targetIP
-            secondAckMessage[8] = (byte) (localPort >> 8);   // 2nd byte port
-            secondAckMessage[9] = (byte) (localPort & 0xff); // 1st byte port
+            secondAckMessage[8] = (byte) (localPort >> 8);   // high byte port
+            secondAckMessage[9] = (byte) (localPort & 0xff); // low byte port
 
             Log.d(TAG, "send ACK " + secondAckMessage.length);
             clientOutStream.write(secondAckMessage, 0, 10);
