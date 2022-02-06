@@ -14,7 +14,7 @@ public class Connection implements Runnable {
     private final Socket clientsocket;
     private final String remoteIp;
     private final int remotePort;
-    private Socket serverConnection = null;
+    private Socket targetServerSocket = null;
 
     public Connection(Socket clientsocket, String remoteIp, int remotePort) {
         this.clientsocket = clientsocket;
@@ -24,37 +24,38 @@ public class Connection implements Runnable {
 
     @Override
     public void run() {
-        Log.i(TAG,"new connection " + clientsocket.getInetAddress().getHostName()+":"+clientsocket.getPort());
         try {
-            serverConnection = new Socket(remoteIp, remotePort);
-            MainActivity.cellNet.getSocketFactory().createSocket(remoteIp,remotePort);
+            targetServerSocket = MainActivity.cellNet.getSocketFactory().createSocket(remoteIp, remotePort);
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
 
-        new Thread(new Forwarder(clientsocket, serverConnection)).start();
-        new Thread(new Forwarder(serverConnection, clientsocket)).start();
+        Log.i(TAG, "create connection to " + targetServerSocket.getInetAddress().getHostName() + ":" + targetServerSocket.getPort());
+
+        new Thread(new Forwarder(clientsocket, targetServerSocket)).start();
+        new Thread(new Forwarder(targetServerSocket, clientsocket)).start();
         new Thread(() -> {
             while (true) {
                 if (clientsocket.isClosed()) {
-                    Log.i(TAG,"client socket ("+clientsocket.getInetAddress().getHostName()+":"+clientsocket.getPort()+") closed", null);
+                    Log.i(TAG, "client socket (" + clientsocket.getInetAddress().getHostName() + ":" + clientsocket.getPort() + ") closed", null);
                     closeServerConnection();
                     break;
                 }
 
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
             }
         }).start();
     }
 
     private void closeServerConnection() {
-        if (serverConnection != null && !serverConnection.isClosed()) {
+        if (targetServerSocket != null && !targetServerSocket.isClosed()) {
             try {
-                Log.i(TAG,"closing remote host connection "+serverConnection.getInetAddress().getHostName()+":"+serverConnection.getPort(),null);
-                serverConnection.close();
+                Log.i(TAG, "closing remote host connection " + targetServerSocket.getInetAddress().getHostName() + ":" + targetServerSocket.getPort(), null);
+                targetServerSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }

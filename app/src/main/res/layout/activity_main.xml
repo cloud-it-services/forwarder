@@ -65,7 +65,7 @@
         <CheckBox android:id="@+id/useProxy"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:checked="true"
+            android:checked="false"
             android:text="use proxy"
             android:onClick="rebind"/>
 

@@ -22,7 +22,7 @@ public class Forwarder implements Runnable {
 
     @Override
     public void run() {
-        Log.i(TAG, "Proxy "+ in.getInetAddress().getHostName() +":"+ in.getPort()+" --> "+out.getInetAddress().getHostName()+":"+out.getPort(), null);
+        Log.i(TAG, "Forward "+ in.getInetAddress().getHostName() +":"+ in.getPort()+" --> "+out.getInetAddress().getHostName()+":"+out.getPort(), null);
         try {
             InputStream inputStream = getInputStream();
             OutputStream outputStream = getOutputStream();
@@ -36,6 +36,7 @@ public class Forwarder implements Runnable {
             while (-1 != (bytesRead = inputStream.read(reply))) {
                 outputStream.write(reply, 0, bytesRead);
             }
+            outputStream.flush();
         } catch (SocketException ignored) {
         } catch (Exception e) {
             e.printStackTrace();
