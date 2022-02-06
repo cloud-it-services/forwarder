@@ -7,6 +7,10 @@
     android:padding="16dp"
     tools:context="com.modima.forwarder.MainActivity">
 
+    <TextView
+        style="?android:attr/listSeparatorTextViewStyle"
+        android:text="Packet Forwarder" />
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -19,11 +23,11 @@
 
         <EditText
             android:id="@+id/srcPort"
-            android:layout_width="100dp"
+            android:layout_width="70dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
-            android:text="4449"
+            android:text="4443"
             android:inputType="number" />
 
     </LinearLayout>
@@ -40,7 +44,7 @@
 
         <EditText
             android:id="@+id/socketTimeout"
-            android:layout_width="100dp"
+            android:layout_width="70dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
@@ -49,11 +53,45 @@
 
     </LinearLayout>
 
+    <TextView
+        style="?android:attr/listSeparatorTextViewStyle"
+        android:text="Proxy" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox android:id="@+id/useProxy"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="use proxy"
+            android:onClick="rebind"/>
+
+        <EditText
+            android:id="@+id/proxyIP"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:text="81.169.152.43"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/proxyPort"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:text="6554"
+            android:inputType="number" />
+
+    </LinearLayout>
+
     <Button
         android:id="@+id/bind"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="bind" />
+        android:text="rebind"
+        android:onClick="rebind"/>
 
     <TextView
         android:id="@+id/status"

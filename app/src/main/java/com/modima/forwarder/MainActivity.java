@@ -9,13 +9,19 @@ import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Button;
+import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.modima.forwarder.tcp.TCPWifiListener;
+import com.modima.forwarder.upd.UDPCellularListener;
+import com.modima.forwarder.upd.UDPWifiListener;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.SocketException;
 
 public class MainActivity extends Activity {
@@ -23,19 +29,25 @@ public class MainActivity extends Activity {
     public static final int MSG_ERROR = 0;
     public static final int MSG_UPDATE_UI = 1;
     private static final String TAG = MainActivity.class.getName();
-    public static int dstPort;
-    public static InetAddress dstIP;
-    public static DatagramSocket wifiSocket;
-    public static DatagramSocket cellSocket;
+    public static DatagramSocket wifiSocketUDP, cellSocketUDP;
+    public static ServerSocket wifiSocketTCP;
     public static Network wifiNet;
     public static Network cellNet;
+    public static InetAddress dstIP;
+    public static int dstPort;
+    public static boolean useProxy;
+    public static int proxyPort;
+    public static String proxyIP;
     public Handler handler;
     private int srcPort;
     private int socketTimeout;
     private EditText editTextSrcPort;
+    private EditText editTextProxyIP;
+    private EditText editTextProxyPort;
     private EditText editTextSocketTimeout;
     private TextView textViewStatus;
     private TextView textViewErrors;
+    private CheckBox checkBoxUseProxy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,59 +56,27 @@ public class MainActivity extends Activity {
 
         editTextSrcPort = findViewById(R.id.srcPort);
         editTextSocketTimeout = findViewById(R.id.socketTimeout);
+
+        checkBoxUseProxy = findViewById(R.id.useProxy);
+        editTextProxyIP = findViewById(R.id.proxyIP);
+        editTextProxyPort = findViewById(R.id.proxyPort);
+
         textViewStatus = findViewById(R.id.status);
         textViewErrors = findViewById(R.id.errors);
-        Button buttonBind = findViewById(R.id.bind);
-        buttonBind.setOnClickListener(view -> {
-            clearError();
-            int newTimeout = Integer.parseInt(editTextSocketTimeout.getText().toString());
-            int newPort = Integer.parseInt(editTextSrcPort.getText().toString());
-            if (srcPort != newPort) {
-                srcPort = newPort;
-                try {
-                    wifiSocket = bindSocket(wifiNet, socketTimeout, srcPort);
-                    updateStatus();
-                } catch (Exception e) {
-                    Log.e(TAG, e.getMessage(), e);
-                    setError(e.getMessage());
-                }
-            }
-            if (socketTimeout != newTimeout) {
-                if (wifiSocket != null) {
-                    new Thread(() -> {
-                        try {
-                            // this is blocking as long as somebody is using the socket
-                            wifiSocket.setSoTimeout(socketTimeout);
-                        } catch (SocketException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            setError(e.getMessage());
-                        }
 
-                    }).start();
-                }
-                if (cellSocket != null) {
-                    new Thread(() -> {
-                        try {
-                            // this is blocking as long as somebody is using the socket
-                            cellSocket.setSoTimeout(socketTimeout);
-                        } catch (SocketException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            setError(e.getMessage());
-                        }
-
-                    }).start();
-                }
-            }
-        });
-
+        useProxy = checkBoxUseProxy.isChecked();
         srcPort = Integer.parseInt(editTextSrcPort.getText().toString());
         socketTimeout = Integer.parseInt(editTextSocketTimeout.getText().toString());
+        proxyIP = editTextProxyIP.getText().toString();
+        proxyPort = Integer.parseInt(editTextProxyPort.getText().toString());
         try {
-            wifiSocket = new DatagramSocket(srcPort);
-            wifiSocket.setSoTimeout(socketTimeout);
-            cellSocket = new DatagramSocket();
-            cellSocket.setSoTimeout(socketTimeout);
-        } catch (SocketException e) {
+            wifiSocketUDP = new DatagramSocket(srcPort);
+            wifiSocketUDP.setSoTimeout(socketTimeout);
+            cellSocketUDP = new DatagramSocket();
+            cellSocketUDP.setSoTimeout(socketTimeout);
+            wifiSocketTCP = new ServerSocket(srcPort);
+            wifiSocketTCP.setSoTimeout(socketTimeout);
+        } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
             setError(e.getMessage());
         }
@@ -113,11 +93,60 @@ public class MainActivity extends Activity {
             return true;
         });
 
-        new WifiListener(handler).start();
-        new CellularListener(handler).start();
+        new TCPWifiListener(handler).start();
+        new UDPWifiListener(handler).start();
+        new UDPCellularListener(handler).start();
 
         this.requestNetworks();
         this.updateStatus();
+    }
+
+    public void rebind(View view) {
+        clearError();
+
+        useProxy = checkBoxUseProxy.isChecked();
+        proxyIP = editTextProxyIP.getText().toString();
+        proxyPort = Integer.parseInt(editTextProxyPort.getText().toString());
+        int newTimeout = Integer.parseInt(editTextSocketTimeout.getText().toString());
+        int newPort = Integer.parseInt(editTextSrcPort.getText().toString());
+        if (srcPort != newPort) {
+            srcPort = newPort;
+            try {
+                wifiSocketUDP = bindSocket(wifiNet, socketTimeout, srcPort);
+                wifiSocketTCP = new ServerSocket(srcPort);
+                updateStatus();
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage(), e);
+                setError(e.getMessage());
+            }
+        }
+        if (socketTimeout != newTimeout) {
+            if (wifiSocketUDP != null) {
+                new Thread(() -> {
+                    try {
+                        // this is blocking as long as somebody is using the socket
+                        wifiSocketUDP.setSoTimeout(socketTimeout);
+                        wifiSocketTCP.setSoTimeout(socketTimeout);
+                    } catch (SocketException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                        setError(e.getMessage());
+                    }
+
+                }).start();
+            }
+            if (cellSocketUDP != null) {
+                new Thread(() -> {
+                    try {
+                        // this is blocking as long as somebody is using the socket
+                        cellSocketUDP.setSoTimeout(socketTimeout);
+                    } catch (SocketException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                        setError(e.getMessage());
+                    }
+
+                }).start();
+            }
+        }
     }
 
     public void updateStatus() {
@@ -154,14 +183,14 @@ public class MainActivity extends Activity {
                     try {
                         Log.d(TAG, "got wifi " + network.getNetworkHandle());
                         wifiNet = network;
-                        if (wifiSocket != null) {
-                            wifiNet.bindSocket(wifiSocket);
+                        if (wifiSocketUDP != null) {
+                            wifiNet.bindSocket(wifiSocketUDP);
                         }
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage(), e);
                         handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage()));
                     }
-                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,""));
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, ""));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
@@ -178,7 +207,7 @@ public class MainActivity extends Activity {
                 super.onBlockedStatusChanged(network, blocked);
                 if (blocked) {
                     wifiNet = null;
-                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,"wifi network was blocked"));
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, "wifi network was blocked"));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
@@ -192,14 +221,14 @@ public class MainActivity extends Activity {
                     try {
                         Log.d(TAG, "got cellular " + network.getNetworkHandle());
                         cellNet = network;
-                        if (cellSocket != null) {
-                            cellNet.bindSocket(cellSocket);
+                        if (cellSocketUDP != null) {
+                            cellNet.bindSocket(cellSocketUDP);
                         }
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage(), e);
                         handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage()));
                     }
-                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,""));
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, ""));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
@@ -216,7 +245,7 @@ public class MainActivity extends Activity {
                 super.onBlockedStatusChanged(network, blocked);
                 if (blocked) {
                     cellNet = null;
-                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,"cellular network was blocked"));
+                    handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, "cellular network was blocked"));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
