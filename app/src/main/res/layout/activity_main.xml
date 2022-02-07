@@ -100,7 +100,8 @@
         android:textColor="#001287"
         android:layout_marginTop="20dp"
         android:padding="10dp"
-        android:text=""
+        android:textSize="18sp"
+        android:text="ASDFSADF"
         />
 
     <TextView
@@ -110,6 +111,7 @@
         android:textColor="#E15151"
         android:layout_marginTop="20dp"
         android:padding="10dp"
+        android:textSize="18sp"
         android:text=""
         />
 

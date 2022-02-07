@@ -3,6 +3,8 @@ package com.modima.forwarder;
 import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
@@ -20,6 +22,7 @@ import com.modima.forwarder.upd.UDPWifiListener;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.SocketException;
@@ -33,11 +36,13 @@ public class MainActivity extends Activity {
     public static ServerSocket wifiSocketTCP;
     public static Network wifiNet;
     public static Network cellNet;
+    public static String wifiIP;
+    public static String cellIP;
     public static InetAddress dstIP;
     public static int dstPort;
     public static boolean useProxy;
-    public static int proxyPort;
     public static String proxyIP;
+    public static int proxyPort;
     public Handler handler;
     private int srcPort;
     private int socketTimeout;
@@ -151,10 +156,19 @@ public class MainActivity extends Activity {
 
     public void updateStatus() {
         String msg = "";
-        msg += "wifi network ";
-        msg += wifiNet != null ? "OK" + " (listen on port " + srcPort + ")" : "failed";
-        msg += "\ncellular network ";
-        msg += cellNet != null ? "OK" : "failed";
+        if (wifiNet != null) {
+            msg += "wifi network OK\n";
+            msg += MainActivity.wifiIP + ":" + srcPort;
+        } else {
+            msg += "wifi network failed";
+        }
+        msg += "\n\n";
+        if (cellNet != null) {
+            msg += "cellular network OK\n";
+            msg += MainActivity.cellIP;
+        } else {
+            msg += "cellular network failed";
+        }
         textViewStatus.setText(msg);
     }
 
@@ -211,6 +225,16 @@ public class MainActivity extends Activity {
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
             }
+
+            @Override
+            public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
+                for (LinkAddress la : linkProperties.getLinkAddresses()) {
+                    InetAddress ip = la.getAddress();
+                    if (!ip.isLoopbackAddress() && ip instanceof Inet4Address) {
+                        MainActivity.wifiIP = ip.getHostAddress();
+                    }
+                }
+            }
         };
 
         final ConnectivityManager.NetworkCallback cbCellular = new ConnectivityManager.NetworkCallback() {
@@ -247,6 +271,16 @@ public class MainActivity extends Activity {
                     cellNet = null;
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, "cellular network was blocked"));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
+                }
+            }
+
+            @Override
+            public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
+                for (LinkAddress la : linkProperties.getLinkAddresses()) {
+                    InetAddress ip = la.getAddress();
+                    if (!ip.isLoopbackAddress() && ip instanceof Inet4Address) {
+                        MainActivity.cellIP = ip.getHostAddress();
+                    }
                 }
             }
         };
