@@ -1,118 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context="com.modima.forwarder.MainActivity">
+    android:layout_height="match_parent">
 
-    <TextView
-        style="?android:attr/listSeparatorTextViewStyle"
-        android:text="Packet Forwarder" />
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        tools:context="com.modima.forwarder.MainActivity">
 
         <TextView
-            android:layout_width="100dp"
+            style="?android:attr/listSeparatorTextViewStyle"
+            android:text="Packet Forwarder" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Listening Port:" />
+            android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/srcPort"
-            android:layout_width="70dp"
+            <TextView
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:text="Listening Port:" />
+
+            <EditText
+                android:id="@+id/srcPort"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:text="4441"
+                android:inputType="number" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:text="4443"
-            android:inputType="number" />
+            android:orientation="horizontal">
 
-    </LinearLayout>
+            <TextView
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:text="Timeout (ms):" />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+            <EditText
+                android:id="@+id/socketTimeout"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:text="60000"
+                android:inputType="number" />
+
+        </LinearLayout>
 
         <TextView
-            android:layout_width="100dp"
+            style="?android:attr/listSeparatorTextViewStyle"
+            android:text="Proxy" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Timeout (ms):" />
+            android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/socketTimeout"
-            android:layout_width="70dp"
+            <CheckBox android:id="@+id/useProxy"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:text="use proxy"
+                android:onClick="rebind"/>
+
+            <EditText
+                android:id="@+id/proxyIP"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="81.169.152.43"
+                android:inputType="text" />
+
+            <EditText
+                android:id="@+id/proxyPort"
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:text="6554"
+                android:inputType="number" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/bind"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:text="5000"
-            android:inputType="number" />
-
-    </LinearLayout>
-
-    <TextView
-        style="?android:attr/listSeparatorTextViewStyle"
-        android:text="Proxy" />
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <CheckBox android:id="@+id/useProxy"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:checked="false"
-            android:text="use proxy"
+            android:text="rebind"
             android:onClick="rebind"/>
 
-        <EditText
-            android:id="@+id/proxyIP"
-            android:layout_width="150dp"
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:text="81.169.152.43"
-            android:inputType="text" />
+            android:textColor="#001287"
+            android:layout_marginTop="20dp"
+            android:padding="10dp"
+            android:textSize="18sp"
+            android:text="ASDFSADF"
+            />
 
-        <EditText
-            android:id="@+id/proxyPort"
-            android:layout_width="70dp"
+        <TextView
+            android:id="@+id/errors"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="6554"
-            android:inputType="number" />
+            android:textColor="#E15151"
+            android:layout_marginTop="20dp"
+            android:padding="10dp"
+            android:textSize="18sp"
+            android:text=""
+            />
 
     </LinearLayout>
-
-    <Button
-        android:id="@+id/bind"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="rebind"
-        android:onClick="rebind"/>
-
-    <TextView
-        android:id="@+id/status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#001287"
-        android:layout_marginTop="20dp"
-        android:padding="10dp"
-        android:textSize="18sp"
-        android:text="ASDFSADF"
-        />
-
-    <TextView
-        android:id="@+id/errors"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#E15151"
-        android:layout_marginTop="20dp"
-        android:padding="10dp"
-        android:textSize="18sp"
-        android:text=""
-        />
-
-</LinearLayout>
+</ScrollView>

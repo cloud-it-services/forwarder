@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.modima.forwarder.MainActivity;
-import com.modima.forwarder.socks.SocksServer;
+import com.modima.forwarder.socks.SocksProxy;
 
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -21,7 +21,7 @@ public class TCPWifiListener extends Thread {
 
     @Override
     public void run() {
-
+        Log.e(TAG, "start TCPWifiListener");
         while (true) {
             try {
                 if (MainActivity.wifiSocketTCP == null || MainActivity.cellNet == null) {
@@ -29,7 +29,7 @@ public class TCPWifiListener extends Thread {
                     continue;
                 }
 
-                //Log.d(TAG, "wait for packet from wifi...", null);
+                Log.d(TAG, "wait for packet from wifi...", null);
                 Socket socket = MainActivity.wifiSocketTCP.accept();
 
                 if (MainActivity.useProxy) {
@@ -37,7 +37,7 @@ public class TCPWifiListener extends Thread {
                     startThread(new Connection(socket, MainActivity.proxyIP, MainActivity.proxyPort));
                 } else {
                     Log.d(TAG, "...wifi packet received --> handle local");
-                    new SocksServer(socket).start();
+                    new SocksProxy(socket).start();
                 }
 
             } catch (SocketTimeoutException e) {
