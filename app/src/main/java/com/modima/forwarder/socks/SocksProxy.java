@@ -8,8 +8,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class SocksProxy extends Thread {
 
@@ -113,10 +116,13 @@ public class SocksProxy extends Thread {
                 case 3:
                     // create UDP Forwarding
                     Log.d(TAG, "UDP Connection to " + domainName + " " + targetIP + ":" + port);
-                    localIPBytes = MainActivity.wifiSocketUDP.getLocalAddress().getAddress();
-                    int udpPort = MainActivity.wifiSocketUDP.getLocalPort();
+                    DatagramSocket s = new DatagramSocket();
+                    MainActivity.wifiNet.bindSocket(s);
+                    localIPBytes = s.getLocalAddress().getAddress();
+                    int udpPort = s.getLocalPort();
                     sendResponse(localIPBytes, udpPort, (byte) 0);
-                    Log.e(TAG, "!!!!!!!!!!!!! UDP forwarding requested !!!!!!!!!!!!!");
+                    createUDPConnection(s);
+                    Log.e(TAG, "!!!!!!!!!!!!! UDP forwarding established !!!!!!!!!!!!!");
                     break;
             }
         } catch (Exception e) {
@@ -171,6 +177,33 @@ public class SocksProxy extends Thread {
             e.printStackTrace();
         }
     }
+    protected void createUDPConnection(DatagramSocket source) {
+
+        new Thread(() -> {
+            byte[] buf = new byte[4096];
+            while (true) {
+                try {
+                    Log.d(TAG, "wait for udp packet...", null);
+                    source.setSoTimeout(120000); // close after two minutes no packet received
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                    source.receive(packet);
+                    Log.d("UDP", packet.getData().toString());
+                    Log.d(TAG, "forward udp packet to " + packet.getAddress() + ":" + packet.getPort(), null);
+                    MainActivity.cellSocketUDP.send(new DatagramPacket(packet.getData(), packet.getLength(), packet.getAddress(), packet.getPort()));
+                    Log.d(TAG, "forward udp packet ok", null);
+                } catch (SocketTimeoutException e) {
+                    Log.e(TAG, "!!! Close udp socket " + source.getInetAddress().getHostAddress());
+                    source.close();
+                    break;
+                } catch (IOException e) {
+                        Log.e(TAG, "!!! Closed UDP socket to " + source.getInetAddress().getHostAddress());
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                    Log.e(TAG,e.getMessage(),e);
+                }
+            }
+        }).start();
+    }
 
     protected void createTCPConnection(Socket targetSocket) throws IOException {
         InputStream serverInStream = targetSocket.getInputStream();
@@ -194,7 +227,6 @@ public class SocksProxy extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                /*
                 // CLosing the socket leads to that the request may not be sended to the target destination
                 try {
                     Log.e(TAG, "!!! Close socket to " + targetSocket.getInetAddress().getHostAddress());
@@ -203,7 +235,6 @@ public class SocksProxy extends Thread {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                */
             }
         }).start();
 
