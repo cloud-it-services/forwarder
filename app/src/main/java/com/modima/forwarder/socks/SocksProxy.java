@@ -13,6 +13,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.Arrays;
 
 public class SocksProxy extends Thread {
 
@@ -118,9 +119,10 @@ public class SocksProxy extends Thread {
                     Log.d(TAG, "UDP Connection to " + domainName + " " + targetIP + ":" + port);
                     DatagramSocket s = new DatagramSocket();
                     MainActivity.wifiNet.bindSocket(s);
-                    localIPBytes = s.getLocalAddress().getAddress();
+                    //localIPBytes = s.getLocalAddress().getAddress();
                     int udpPort = s.getLocalPort();
-                    sendResponse(localIPBytes, udpPort, (byte) 0);
+                    Log.e(TAG, "UDP host address: " + s.getLocalAddress().getHostAddress() + ":" + udpPort);
+                    sendResponse(new byte[]{(byte)192,(byte)168,(byte)36,(byte)10}, udpPort, (byte) 0);
                     createUDPConnection(s);
                     Log.e(TAG, "!!!!!!!!!!!!! UDP forwarding established !!!!!!!!!!!!!");
                     break;
@@ -152,6 +154,8 @@ public class SocksProxy extends Thread {
         response[1] = respCode; // response code
         response[2] = 0;        // reserved
 
+        Log.e("TAG","IP len: " + localIP.length);
+
         if (localIP.length == 4) {
             response[3] = 1;        // address type IPv4
             for (int i = 0; i < localIP.length; i++) {
@@ -168,7 +172,7 @@ public class SocksProxy extends Thread {
         response[len-2] = (byte) (localPort >> 8);   // high byte port
         response[len-1] = (byte) (localPort & 0xff); // low byte port
 
-        Log.d(TAG, "socks response code " + respCode);
+        Log.d(TAG, "socks response: " + bytes2String(response));
         try {
             OutputStream os = this.socket.getOutputStream();
             os.write(response, 0, len);
@@ -177,23 +181,112 @@ public class SocksProxy extends Thread {
             e.printStackTrace();
         }
     }
+
+    public static String bytes2String(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        for (byte b : bytes) {
+            sb.append(String.format("0x%02X ", b));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     protected void createUDPConnection(DatagramSocket source) {
 
         new Thread(() -> {
             byte[] buf = new byte[4096];
             while (true) {
                 try {
-                    Log.d(TAG, "wait for udp packet...", null);
+                    Log.d(TAG, "SOCKS UDP: listen on " + source.getLocalSocketAddress(), null);
                     source.setSoTimeout(120000); // close after two minutes no packet received
-                    DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                    source.receive(packet);
-                    Log.d("UDP", packet.getData().toString());
-                    Log.d(TAG, "forward udp packet to " + packet.getAddress() + ":" + packet.getPort(), null);
-                    MainActivity.cellSocketUDP.send(new DatagramPacket(packet.getData(), packet.getLength(), packet.getAddress(), packet.getPort()));
-                    Log.d(TAG, "forward udp packet ok", null);
+                    DatagramPacket request = new DatagramPacket(buf, buf.length);
+                    source.receive(request);
+                    Log.d("UDP", bytes2String(request.getData()));
+
+                    // Parse UDP Packet
+                    int idx = 0;
+                    buf = request.getData();
+                    // first two bytes are reserved 0x0
+                    idx+=2;
+                    // 3rd byte fragment number (if not 0x0 --> discard (no fragment support yet))
+                    if (buf[idx++] != 0) continue;
+
+                    // 4th byte is address type
+                    InetAddress targetAddress = null;
+                    byte[] addressBytes;
+                    switch (buf[idx++]) {
+                        case 1: // IP v4
+                            addressBytes = Arrays.copyOfRange(buf, idx, idx+=4);
+                            targetAddress = InetAddress.getByAddress(addressBytes);
+                            break;
+                        case 3: // domain name
+                            int len = buf[idx++];
+                            addressBytes = Arrays.copyOfRange(buf, idx, idx+=len);
+                            String domainName = new String(addressBytes, 0, len);
+                            targetAddress = MainActivity.cellNet.getByName(domainName);
+                            break;
+                        case 4: // IP v6
+                            addressBytes = Arrays.copyOfRange(buf, idx, idx+=16);
+                            targetAddress = InetAddress.getByAddress(addressBytes);
+                            break;
+                    }
+                    int port = byte2int(buf[idx++]) * 256 + byte2int(buf[idx++]);
+                    int payloadLen = request.getLength()-idx;
+                    byte[] payload = Arrays.copyOfRange(buf,idx,idx+payloadLen);
+
+                    Log.d("UDP", "forward udp packet to " + targetAddress.getHostAddress() + ":" + port + " | payload: " + bytes2String(payload));
+                    DatagramSocket ds = new DatagramSocket();
+                    MainActivity.cellNet.bindSocket(ds);
+
+                    // start response thread
+                    new Thread(() -> {
+                        byte[] respBuf = new byte[4096];
+                        while (true) {
+                            try {
+                                DatagramPacket serverResponse = new DatagramPacket(respBuf, respBuf.length);
+                                Log.d("UDP", "... await response", null);
+                                ds.receive(serverResponse);
+
+
+                                // send back to client
+                                byte[] sAddr = serverResponse.getAddress().getAddress();
+                                int sPort = serverResponse.getPort();
+                                byte[] responseData = new byte[4096];
+                                responseData[0] = (byte) 0x00;    // Reserved 0x00
+                                responseData[1] = (byte) 0x00;    // Reserved 0x00
+                                responseData[2] = (byte) 0x00;    // FRAG '00' - Standalone DataGram
+                                responseData[3] = (byte) 0x01;    // Address Type -->'01'-IP v4
+                                System.arraycopy(sAddr, 0, responseData, 4, sAddr.length);
+                                responseData[4 + sAddr.length] = (byte) ((sPort >> 8) & 0xFF);
+                                responseData[5 + sAddr.length] = (byte) ((sPort) & 0xFF);
+                                System.arraycopy(serverResponse.getData(), 0, responseData, 6 + sAddr.length, serverResponse.getLength());
+
+                                DatagramPacket response = new DatagramPacket(responseData,responseData.length,request.getAddress(), request.getPort());
+                                source.send(response);
+                                Log.d("UDP","!!!!!!!!!!!! UDP RESPONSE" + response.getAddress().getHostAddress() + ":" + response.getPort() + " | payload: " + bytes2String(responseData));
+                            } catch (SocketTimeoutException e) {
+                                if (source != null) {
+                                    //Log.e(TAG, "!!! Close udp socket " + source.getInetAddress().getHostAddress());
+                                    source.close();
+                                }
+                                break;
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+
+                    ds.send(new DatagramPacket(payload, payloadLen, targetAddress, port));
+                    Log.d("UDP", "forward udp packet ok", null);
+
+                    //MainActivity.cellSocketUDP.send(new DatagramPacket(data, data.length, targetAddress, port));
                 } catch (SocketTimeoutException e) {
-                    Log.e(TAG, "!!! Close udp socket " + source.getInetAddress().getHostAddress());
-                    source.close();
+                    if (source != null) {
+                        //Log.e(TAG, "!!! Close udp socket " + source.getInetAddress().getHostAddress());
+                        source.close();
+                    }
                     break;
                 } catch (IOException e) {
                         Log.e(TAG, "!!! Closed UDP socket to " + source.getInetAddress().getHostAddress());

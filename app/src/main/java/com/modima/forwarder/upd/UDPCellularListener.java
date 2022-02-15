@@ -30,7 +30,7 @@ public class UDPCellularListener extends Thread {
                     continue;
                 }
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                Log.d(TAG, "wait for packet from cellular...", null);
+                Log.d(TAG, "CELLULAR UDP: listen on " + MainActivity.cellSocketUDP.getLocalSocketAddress(), null);
                 MainActivity.cellSocketUDP.receive(packet);
                 Log.d(TAG, "...cellular packet received", null);
                 if (MainActivity.dstIP != null && MainActivity.dstPort != 0) {

@@ -29,7 +29,7 @@ public class UDPWifiListener extends Thread {
                     Thread.sleep(1000);
                     continue;
                 }
-                Log.d(TAG, "wait for packet from wifi...", null);
+                Log.d(TAG, "WIFI UDP: listen on " + MainActivity.wifiSocketUDP.getLocalSocketAddress(), null);
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 MainActivity.wifiSocketUDP.receive(packet);
                 MainActivity.dstIP = packet.getAddress();

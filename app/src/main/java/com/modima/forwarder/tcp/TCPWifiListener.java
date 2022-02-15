@@ -29,7 +29,7 @@ public class TCPWifiListener extends Thread {
                     continue;
                 }
 
-                Log.d(TAG, "wait for packet from wifi...", null);
+                Log.d(TAG, "WIFI TCP: listen on " + MainActivity.wifiSocketTCP.getLocalSocketAddress(), null);
                 Socket socket = MainActivity.wifiSocketTCP.accept();
 
                 if (MainActivity.useProxy) {
