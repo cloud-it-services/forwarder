@@ -36,8 +36,8 @@ public class MainActivity extends Activity {
     public static ServerSocket wifiSocketTCP;
     public static Network wifiNet;
     public static Network cellNet;
-    public static String wifiIP;
-    public static String cellIP;
+    public static InetAddress wifiAddress;
+    public static InetAddress cellAddress;
     public static InetAddress dstIP;
     public static int dstPort;
     public static boolean useProxy;
@@ -158,14 +158,14 @@ public class MainActivity extends Activity {
         String msg = "";
         if (wifiNet != null) {
             msg += "wifi network OK\n";
-            msg += MainActivity.wifiIP + ":" + srcPort;
+            msg += MainActivity.wifiAddress.getHostAddress() + ":" + srcPort;
         } else {
             msg += "wifi network failed";
         }
         msg += "\n\n";
         if (cellNet != null) {
             msg += "cellular network OK\n";
-            msg += MainActivity.cellIP;
+            msg += MainActivity.cellAddress.getHostAddress();
         } else {
             msg += "cellular network failed";
         }
@@ -189,14 +189,20 @@ public class MainActivity extends Activity {
     }
 
     protected void requestNetworks() {
+
+        final ConnectivityManager connectivityManager = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+
         final ConnectivityManager.NetworkCallback cbWifi = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(Network network) {
                 super.onAvailable(network);
+                Log.e(TAG, "wifi available");
                 if (wifiNet == null || network.getNetworkHandle() != wifiNet.getNetworkHandle()) {
                     try {
                         Log.d(TAG, "got wifi " + network.getNetworkHandle());
                         wifiNet = network;
+                        connectivityManager.bindProcessToNetwork(network);
                         if (wifiSocketUDP != null) {
                             wifiNet.bindSocket(wifiSocketUDP);
                         }
@@ -212,6 +218,7 @@ public class MainActivity extends Activity {
             @Override
             public void onLost(Network network) {
                 super.onLost(network);
+                Log.e(TAG, "wifi lost");
                 wifiNet = null;
                 handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
             }
@@ -220,6 +227,7 @@ public class MainActivity extends Activity {
             public void onBlockedStatusChanged(Network network, boolean blocked) {
                 super.onBlockedStatusChanged(network, blocked);
                 if (blocked) {
+                    Log.e(TAG, "wifi blocked");
                     wifiNet = null;
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, "wifi network was blocked"));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
@@ -231,7 +239,8 @@ public class MainActivity extends Activity {
                 for (LinkAddress la : linkProperties.getLinkAddresses()) {
                     InetAddress ip = la.getAddress();
                     if (!ip.isLoopbackAddress() && ip instanceof Inet4Address) {
-                        MainActivity.wifiIP = ip.getHostAddress();
+                        MainActivity.wifiAddress = ip;
+                        Log.e(TAG, "wifi IP: " + MainActivity.wifiAddress.getHostAddress());
                     }
                 }
             }
@@ -241,6 +250,7 @@ public class MainActivity extends Activity {
             @Override
             public void onAvailable(Network network) {
                 super.onAvailable(network);
+                Log.e(TAG, "cellular available");
                 if (cellNet == null || network.getNetworkHandle() != cellNet.getNetworkHandle()) {
                     try {
                         Log.d(TAG, "got cellular " + network.getNetworkHandle());
@@ -260,6 +270,7 @@ public class MainActivity extends Activity {
             @Override
             public void onLost(Network network) {
                 super.onLost(network);
+                Log.e(TAG, "cellular lost");
                 cellNet = null;
                 handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
             }
@@ -268,6 +279,7 @@ public class MainActivity extends Activity {
             public void onBlockedStatusChanged(Network network, boolean blocked) {
                 super.onBlockedStatusChanged(network, blocked);
                 if (blocked) {
+                    Log.e(TAG, "cellular blocked");
                     cellNet = null;
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, "cellular network was blocked"));
                     handler.sendMessage(handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
@@ -279,14 +291,14 @@ public class MainActivity extends Activity {
                 for (LinkAddress la : linkProperties.getLinkAddresses()) {
                     InetAddress ip = la.getAddress();
                     if (!ip.isLoopbackAddress() && ip instanceof Inet4Address) {
-                        MainActivity.cellIP = ip.getHostAddress();
+                        MainActivity.cellAddress = ip;
+                        Log.e(TAG, "cellular IP: " + MainActivity.cellAddress.getHostAddress());
                     }
                 }
             }
         };
 
-        final ConnectivityManager connectivityManager = (ConnectivityManager)
-                getSystemService(Context.CONNECTIVITY_SERVICE);
+
         connectivityManager.requestNetwork(new NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                 .build(), cbWifi);

@@ -122,7 +122,7 @@ public class SocksProxy extends Thread {
                     //localIPBytes = s.getLocalAddress().getAddress();
                     int udpPort = s.getLocalPort();
                     Log.e(TAG, "UDP host address: " + s.getLocalAddress().getHostAddress() + ":" + udpPort);
-                    sendResponse(new byte[]{(byte)192,(byte)168,(byte)36,(byte)10}, udpPort, (byte) 0);
+                    sendResponse(MainActivity.wifiAddress.getAddress(), udpPort, (byte) 0);
                     createUDPConnection(s);
                     Log.e(TAG, "!!!!!!!!!!!!! UDP forwarding established !!!!!!!!!!!!!");
                     break;
@@ -289,9 +289,9 @@ public class SocksProxy extends Thread {
                     }
                     break;
                 } catch (IOException e) {
-                        Log.e(TAG, "!!! Closed UDP socket to " + source.getInetAddress().getHostAddress());
-                        e.printStackTrace();
-                    } catch (Exception e) {
+                    Log.e(TAG, "!!! Closed UDP socket to " + source.getInetAddress().getHostAddress());
+                    e.printStackTrace();
+                } catch (Exception e) {
                     Log.e(TAG,e.getMessage(),e);
                 }
             }
