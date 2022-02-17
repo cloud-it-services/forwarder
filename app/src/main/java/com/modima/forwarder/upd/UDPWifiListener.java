@@ -8,6 +8,7 @@ import com.modima.forwarder.MainActivity;
 
 import java.net.DatagramPacket;
 import java.net.SocketTimeoutException;
+import java.util.Arrays;
 
 public class UDPWifiListener extends Thread {
 
@@ -35,10 +36,8 @@ public class UDPWifiListener extends Thread {
                 MainActivity.dstIP = packet.getAddress();
                 MainActivity.dstPort = packet.getPort();
                 Log.d(TAG, "...wifi packet received from " + MainActivity.dstIP.getHostAddress() + ":" + MainActivity.dstPort, null);
-                Log.d("UDP", packet.getData().toString());
-                Log.d(TAG, "send wifi packet...", null);
-                //packet.setAddress(InetAddress.getByAddress(new byte[] {8, 8, 8, 8})); // debugging (remove in production)
-                //packet.setPort(53); // debugging (remove in production)
+                byte[] payload = Arrays.copyOfRange(buf,0,packet.getLength());
+                Log.d("UDP", "forward udp packet to " + packet.getAddress() + ":" + packet.getPort() + " | payload: " + bytes2String(payload));
                 MainActivity.cellSocketUDP.send(new DatagramPacket(packet.getData(), packet.getLength(), packet.getAddress(), packet.getPort()));
                 Log.d(TAG, "...send wifi ok", null);
                 Message msg = handler.obtainMessage(MainActivity.MSG_ERROR,0,0,"");
@@ -49,6 +48,16 @@ public class UDPWifiListener extends Thread {
                 handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR,0,0,e.getMessage()));
             }
         }
+    }
+
+    public static String bytes2String(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        for (byte b : bytes) {
+            sb.append(String.format("0x%02X ", b));
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }
 
