@@ -176,23 +176,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rebindProxy(null);
-
         handler = new Handler(msg -> {
-            ConfigFragment configFragment = (ConfigFragment) sectionsPagerAdapter.getItem(0);
-            ConnectionsFragment connectionsFragment = (ConnectionsFragment) sectionsPagerAdapter.getItem(1);
-            switch (msg.what) {
-                case MSG_ERROR:
-                    configFragment.setError((String) msg.obj);
-                    break;
-                case MSG_UPDATE_UI:
-                    configFragment.updateStatus();
-                    if (connectionsFragment != null) {
-                        //Log.e(TAG, "notifyDataSetChanged");
-                        connectionsFragment.updateUI();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ConfigFragment configFragment = (ConfigFragment) sectionsPagerAdapter.getItem(0);
+                    ConnectionsFragment connectionsFragment = (ConnectionsFragment) sectionsPagerAdapter.getItem(1);
+                    switch (msg.what) {
+                        case MSG_ERROR:
+                            configFragment.setError((String) msg.obj);
+                            break;
+                        case MSG_UPDATE_UI:
+                            Log.e("!!! UI", "update status");
+                            configFragment.updateStatus();
+                            if (connectionsFragment != null) {
+                                //Log.e(TAG, "notifyDataSetChanged");
+                                connectionsFragment.updateUI();
+                            }
+                            break;
                     }
-                    break;
-            }
+                }
+            });
             return true;
         });
 
@@ -204,6 +208,8 @@ public class MainActivity extends AppCompatActivity {
         connectivityManager.requestNetwork(new NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
                 .build(), cbCellular);
+
+        rebindProxy(null);
     }
 
     public void removeConnection(Connection con) {
@@ -269,7 +275,9 @@ public class MainActivity extends AppCompatActivity {
             int port = cf.getSocksPort();
             proxy = new SocksProxy(port, MainActivity.this);
             proxy.start();
+            handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, ""));
         } catch (IOException e) {
+            handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage()));
             e.printStackTrace();
         }
     }
