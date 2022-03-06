@@ -69,8 +69,6 @@ public class UDPConnection extends Connection{
                     MainActivity.handler.sendMessage(MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 } catch (IOException e) {
                     e.printStackTrace();
-                } finally {
-                    main.removeConnection(this);
                 }
             }
         }).start();
@@ -90,8 +88,6 @@ public class UDPConnection extends Connection{
                     MainActivity.handler.sendMessage(MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 } catch (IOException e) {
                     e.printStackTrace();
-                } finally {
-                    main.removeConnection(this);
                 }
             }
         }).start();

@@ -41,7 +41,7 @@
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
             android:inputType="number"
-            android:text="4441" />
+            android:text="5522" />
     </LinearLayout>
 
     <LinearLayout
@@ -61,8 +61,8 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
-            android:inputType="number"
-            android:text="10.10.0.0" />
+            android:inputType="text"
+            android:text="8.8.8.8" />
     </LinearLayout>
 
     <LinearLayout
@@ -83,7 +83,7 @@
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
             android:inputType="number"
-            android:text="123" />
+            android:text="53" />
     </LinearLayout>
 
     <LinearLayout

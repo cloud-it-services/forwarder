@@ -39,13 +39,34 @@ public class ConnectionAdapter extends ArrayAdapter<Connection> implements Seria
         });
 
         // Lookup view for data population
-        TextView tvInfo = (TextView) convertView.findViewById(R.id.connectionInfo);
+        TextView tvCInfo = (TextView) convertView.findViewById(R.id.connectionInfo);
+        TextView tvDInfo = (TextView) convertView.findViewById(R.id.destinationInfo);
         TextView tvStats = (TextView) convertView.findViewById(R.id.connectionStats);
         // Populate the data into the template view using the data object
-        String cInfo = connection.type + "/" + connection.proto.toString() + ": " + connection.listenPort + " -> " + connection.dstAddress.toString();
-        tvInfo.setText(cInfo);
+        String cInfo = connection.type + "/" + connection.proto.toString() + ": " + connection.listenPort;
+        tvCInfo.setText(cInfo);
 
-        String cStats = "tx: " + (connection.bytesSent/1000) + " kB | rx: " + (connection.bytesReceived/1000) + " kB";
+        String dInfo = " -> " + connection.dstAddress.toString();
+        tvDInfo.setText(dInfo);
+
+        String cStats = "tx: ";
+        if (connection.bytesSent > 1000000) {
+            cStats += (connection.bytesSent / 1000000) + " MB";
+        } else if (connection.bytesSent > 1000) {
+            cStats += (connection.bytesSent/1000) + " kB";
+        } else {
+            cStats += connection.bytesSent + " bytes";
+        }
+
+        cStats += " | rx: ";
+        if (connection.bytesReceived > 1000000) {
+            cStats += (connection.bytesReceived / 1000000) + " MB";
+        } else if (connection.bytesReceived > 1000) {
+            cStats += (connection.bytesReceived/1000) + " kB";
+        } else {
+            cStats += connection.bytesReceived + " bytes";
+        }
+
         tvStats.setText(cStats);
         // Return the completed view to render on screen
         return convertView;
