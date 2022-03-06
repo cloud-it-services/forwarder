@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 case MSG_UPDATE_UI:
                     configFragment.updateStatus();
                     if (connectionsFragment != null) {
-                        Log.e(TAG, "notifyDataSetChanged");
+                        //Log.e(TAG, "notifyDataSetChanged");
                         connectionsFragment.updateUI();
                     }
                     break;

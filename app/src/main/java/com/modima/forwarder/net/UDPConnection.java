@@ -42,10 +42,12 @@ public class UDPConnection extends Connection{
         switch (this.type) {
             case STATIC:
                 handleStaticConnection(srcSocket);
+                break;
             case SOCKS5:
                 handleSocks5Connection(srcSocket);
+                break;
         }
-        return listenPort;
+        return this.listenPort;
     }
 
     private void handleStaticConnection(DatagramSocket srcSocket) throws IOException {
@@ -108,13 +110,16 @@ public class UDPConnection extends Connection{
             byte[] buf = new byte[BUFFER_SIZE];
             while (true) {
                 try {
-                    Log.d(TAG, "SOCKS UDP: listen on " + srcSocket.getLocalSocketAddress(), null);
+                    //Log.d(TAG, "SOCKS UDP: listen on " + srcSocket.getLocalSocketAddress(), null);
                     DatagramPacket request = new DatagramPacket(buf, buf.length);
+                    //Log.e(TAG, "!!! SOCKS RECEIVE");
                     srcSocket.receive(request);
+                    //Log.e(TAG, ">>>>> !!! SOCKS RECEIVE DONE");
 
                     // Parse UDP Packet
                     int idx = 0;
                     buf = request.getData();
+                    //Log.e(TAG, "SOCKS DATA:  " + bytes2String(buf));
                     // first two bytes are reserved 0x0
                     idx+=2;
                     // 3rd byte fragment number (if not 0x0 --> discard (no fragment support yet))
@@ -145,6 +150,7 @@ public class UDPConnection extends Connection{
                     this.dstAddress = new InetSocketAddress(targetAddress, port);
 
                     // start response thread
+                    Log.d("UDP", "forward udp packet to " + targetAddress.getHostAddress() + ":" + port + " | payload: " + bytes2String(payload));
                     DatagramSocket ds = new DatagramSocket();
                     dstNet.bindSocket(ds);
                     new Thread(() -> {
@@ -189,5 +195,15 @@ public class UDPConnection extends Connection{
 
     private int byte2int(byte b) {
         return b & 0xff;
+    }
+
+    public static String bytes2String(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        for (byte b : bytes) {
+            sb.append(String.format("0x%02X ", b));
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

@@ -7,7 +7,6 @@ import com.modima.forwarder.MainActivity;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -53,18 +52,18 @@ public class SocksProxy {
     public void handleConnection(Socket srcSocket) {
         new Thread(() -> {
             try {
-                Log.e(TAG, "handle connection");
+                //Log.e(TAG, "handle connection");
                 byte[] buff = new byte[BUFFER_SIZE];
                 InputStream clientInStream = srcSocket.getInputStream();
                 OutputStream clientOutStream = srcSocket.getOutputStream();
 
                 // 1st byte version 0x05
                 clientInStream.read(buff, 0, 1); // must be 0x05
-                Log.e(TAG, "v:" + buff[0]);
+                //Log.e(TAG, "v:" + buff[0]);
 
                 // 2nd byte count of supported auth methods
                 clientInStream.read(buff, 0, 1); // must be 0x05
-                Log.e(TAG, "n:" + buff[0]);
+                //Log.e(TAG, "n:" + buff[0]);
 
                 // read codes of supported auth methods (one byte per method)
                 int n = buff[0];
@@ -84,7 +83,7 @@ public class SocksProxy {
                 // 2nd byte command
                 clientInStream.read(buff, 0, 1);
                 byte command = buff[0];
-                Log.e(TAG, "!!!! CMD: " + buff[0]);
+                //Log.e(TAG, "!!!! CMD: " + buff[0]);
 
                 // 3rd byte reserved (0x0)
                 clientInStream.read(buff, 0, 1);
@@ -145,17 +144,19 @@ public class SocksProxy {
                         // create UDP Forwarding
                         Log.d(TAG, "UDP Connection to " + domainName + " " + targetIP + ":" + port);
 
+                        /*
                         DatagramSocket srcUDPSocket = new DatagramSocket();
                         int udpPort = srcUDPSocket.getLocalPort();
                         MainActivity.wifiNet.bindSocket(srcUDPSocket);
+                        */
 
                         UDPConnection udpCon = new UDPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port), main);
-                        udpCon.listen(-1);
+                        int udpPort = udpCon.listen(-1);
                         main.addConnection(udpCon);
                         //MainActivity.connections.add(udpCon); // store in MainActivity for tracking in UI
                         //MainActivity.handler.sendMessage(MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
 
-                        Log.e(TAG, "Local UDP Address: " + srcUDPSocket.getLocalSocketAddress().toString());
+                        //Log.e(TAG, "Local UDP Address: " + srcUDPSocket.getLocalSocketAddress().toString());
                         //localIPBytes = srcUDPSocket.getLocalAddress().getAddress();
                         sendResponse(srcSocket, MainActivity.wifiAddress.getAddress(), udpPort, (byte) 0);
                         break;

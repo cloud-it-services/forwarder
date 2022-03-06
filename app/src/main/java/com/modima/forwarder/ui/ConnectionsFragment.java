@@ -66,7 +66,7 @@ public class ConnectionsFragment extends Fragment {
     }
 
     public void updateUI() {
-        Log.e("CONNECTION FRAGMENT", "updateUI " + connectionAdapter);
+        //Log.e("CONNECTION FRAGMENT", "updateUI " + connectionAdapter);
         if (connectionAdapter != null) {
             connectionAdapter.notifyDataSetChanged();
         }
