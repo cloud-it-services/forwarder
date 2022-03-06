@@ -1,123 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/Theme.Forwarder.AppBarOverlay">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:minHeight="?actionBarSize"
+            android:padding="@dimen/appbar_padding"
+            android:text="@string/app_name"
+            android:textAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title" />
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tab_text_1"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tab_text_2"/>
+
+        </com.google.android.material.tabs.TabLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp"
-        tools:context="com.modima.forwarder.MainActivity">
-
-        <TextView
-            style="?android:attr/listSeparatorTextViewStyle"
-            android:text="Packet Forwarder" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Listening Port:" />
-
-            <EditText
-                android:id="@+id/srcPort"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:text="4441"
-                android:inputType="number" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Timeout (ms):" />
-
-            <EditText
-                android:id="@+id/socketTimeout"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:text="60000"
-                android:inputType="number" />
-
-        </LinearLayout>
-
-        <TextView
-            style="?android:attr/listSeparatorTextViewStyle"
-            android:text="Proxy" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <CheckBox android:id="@+id/useProxy"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:checked="false"
-                android:text="use proxy"
-                android:onClick="rebind"/>
-
-            <EditText
-                android:id="@+id/proxyIP"
-                android:layout_width="150dp"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:text="81.169.152.43"
-                android:inputType="text" />
-
-            <EditText
-                android:id="@+id/proxyPort"
-                android:layout_width="70dp"
-                android:layout_height="wrap_content"
-                android:text="6554"
-                android:inputType="number" />
-
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/bind"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="rebind"
-            android:onClick="rebind"/>
-
-        <TextView
-            android:id="@+id/status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#001287"
-            android:layout_marginTop="20dp"
-            android:padding="10dp"
-            android:textSize="18sp"
-            android:text="ASDFSADF"
-            />
-
-        <TextView
-            android:id="@+id/errors"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#E15151"
-            android:layout_marginTop="20dp"
-            android:padding="10dp"
-            android:textSize="18sp"
-            android:text=""
-            />
-
-    </LinearLayout>
-</ScrollView>
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
