@@ -1,7 +1,6 @@
 package com.modima.forwarder.ui;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -70,7 +69,7 @@ public class ConfigFragment extends Fragment {
             msg += "wifi network failed";
         }
 
-        Log.e("CONFIG FRAG", "updateStatus " + tvWifiStatus);
+        //Log.e("CONFIG FRAG", "updateStatus " + tvWifiStatus);
         if (tvWifiStatus != null) {
             tvWifiStatus.setText(msg);
         }

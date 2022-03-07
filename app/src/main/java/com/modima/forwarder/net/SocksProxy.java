@@ -7,12 +7,13 @@ import com.modima.forwarder.MainActivity;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class SocksProxy {
+public class SocksProxy implements Serializable {
 
     static final String TAG = SocksProxy.class.getName();
 
@@ -122,16 +123,13 @@ public class SocksProxy {
                 switch (command) {
                     case 1:
                         // create TCP Connection
-                        Log.d(TAG, "TCP Connection to " + domainName + " " + targetIP + ":" + port);
-
+                        Log.d(TAG, "TCP Connection to " + domainName + " " + targetIP + ":" + port + " requested");
                         TCPConnection tcpCon = new TCPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port), main);
                         tcpCon.listenPort = this.srcSocket.getLocalPort();
                         Socket dstSocket = tcpCon.connect(srcSocket);
                         main.addConnection((tcpCon));
-                        //MainActivity.connections.add(tcpCon); // store in MainActivity for tracking in UI
-                        //MainActivity.handler.sendMessage(MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
 
-                        Log.e(TAG, "Local TCP Address: " + dstSocket.getLocalSocketAddress().toString());
+                        //Log.e(TAG, "Local TCP Address: " + dstSocket.getLocalSocketAddress().toString());
                         localIPBytes = dstSocket.getLocalAddress().getAddress();
                         int tcpPort = dstSocket.getLocalPort();
                         sendResponse(srcSocket, localIPBytes, tcpPort, (byte) 0);
@@ -142,26 +140,22 @@ public class SocksProxy {
                         break;
                     case 3:
                         // create UDP Forwarding
-                        Log.d(TAG, "UDP Connection to " + domainName + " " + targetIP + ":" + port);
-
-                        /*
-                        DatagramSocket srcUDPSocket = new DatagramSocket();
-                        int udpPort = srcUDPSocket.getLocalPort();
-                        MainActivity.wifiNet.bindSocket(srcUDPSocket);
-                        */
-
+                        Log.d(TAG, "UDP Forwarding requested");
                         UDPConnection udpCon = new UDPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port), main);
                         int udpPort = udpCon.listen(-1);
                         main.addConnection(udpCon);
-                        //MainActivity.connections.add(udpCon); // store in MainActivity for tracking in UI
-                        //MainActivity.handler.sendMessage(MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
-
-                        //Log.e(TAG, "Local UDP Address: " + srcUDPSocket.getLocalSocketAddress().toString());
-                        //localIPBytes = srcUDPSocket.getLocalAddress().getAddress();
                         sendResponse(srcSocket, MainActivity.wifiAddress.getAddress(), udpPort, (byte) 0);
+                        // remove UDP Forwarding when main TCP socket is closed
+                        while(!(srcSocket.isClosed())){
+                            if (clientInStream.read() == -1) {
+                                main.removeConnection(udpCon);
+                                srcSocket.close();
+                            }
+                            Thread.sleep(100);
+                        }
                         break;
                 }
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
                 sendResponse(srcSocket, new byte[]{0, 0, 0, 0}, 0, (byte) 1);
             }

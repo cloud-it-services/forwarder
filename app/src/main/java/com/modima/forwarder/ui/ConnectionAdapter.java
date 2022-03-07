@@ -22,9 +22,6 @@ public class ConnectionAdapter extends ArrayAdapter<Connection> implements Seria
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
-        // Get the data item for this position
-        Connection connection = getItem(position);
         // Check if an existing view is being reused, otherwise inflate the view
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_connection, parent, false);
@@ -42,32 +39,39 @@ public class ConnectionAdapter extends ArrayAdapter<Connection> implements Seria
         TextView tvCInfo = (TextView) convertView.findViewById(R.id.connectionInfo);
         TextView tvDInfo = (TextView) convertView.findViewById(R.id.destinationInfo);
         TextView tvStats = (TextView) convertView.findViewById(R.id.connectionStats);
-        // Populate the data into the template view using the data object
-        String cInfo = connection.type + "/" + connection.proto.toString() + ": " + connection.listenPort;
-        tvCInfo.setText(cInfo);
 
-        String dInfo = " -> " + connection.dstAddress.toString();
-        tvDInfo.setText(dInfo);
+        // Get the data item for this position
+        try {
+            Connection connection = getItem(position);
+            String cInfo = connection.type + "/" + connection.proto.toString() + ": " + connection.listenPort;
+            tvCInfo.setText(cInfo);
 
-        String cStats = "tx: ";
-        if (connection.bytesSent > 1000000) {
-            cStats += (connection.bytesSent / 1000000) + " MB";
-        } else if (connection.bytesSent > 1000) {
-            cStats += (connection.bytesSent/1000) + " kB";
-        } else {
-            cStats += connection.bytesSent + " bytes";
+            String dInfo = " -> " + connection.dstAddress.toString();
+            tvDInfo.setText(dInfo);
+
+            String cStats = "tx: ";
+            if (connection.bytesSent > 1000000) {
+                cStats += (connection.bytesSent / 1000000) + " MB";
+            } else if (connection.bytesSent > 1000) {
+                cStats += (connection.bytesSent/1000) + " kB";
+            } else {
+                cStats += connection.bytesSent + " bytes";
+            }
+
+            cStats += " | rx: ";
+            if (connection.bytesReceived > 1000000) {
+                cStats += (connection.bytesReceived / 1000000) + " MB";
+            } else if (connection.bytesReceived > 1000) {
+                cStats += (connection.bytesReceived/1000) + " kB";
+            } else {
+                cStats += connection.bytesReceived + " bytes";
+            }
+
+            tvStats.setText(cStats);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        cStats += " | rx: ";
-        if (connection.bytesReceived > 1000000) {
-            cStats += (connection.bytesReceived / 1000000) + " MB";
-        } else if (connection.bytesReceived > 1000) {
-            cStats += (connection.bytesReceived/1000) + " kB";
-        } else {
-            cStats += connection.bytesReceived + " bytes";
-        }
-
-        tvStats.setText(cStats);
         // Return the completed view to render on screen
         return convertView;
     }

@@ -42,6 +42,10 @@ public class MainActivity extends AppCompatActivity {
     public static InetAddress cellAddress;
     public static Handler handler;
     public static ArrayList<Connection> connections = new ArrayList<Connection>();
+    public static SectionsPagerAdapter sectionsPagerAdapter;
+    public static ConnectivityManager connectivityManager;
+    public static SocksProxy proxy;
+
     final ConnectivityManager.NetworkCallback cbCellular = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(Network network) {
@@ -87,15 +91,13 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity.cellAddress = ip;
                     Log.e(TAG, "cellular IP: " + MainActivity.cellAddress.getHostAddress());
                     // TESTING
-                    addConnection("udp", 5522, new InetSocketAddress("8.8.8.8", 53));
+                    //addConnection("udp", 5522, new InetSocketAddress("8.8.8.8", 53));
                     // TESTING END
                 }
             }
         }
     };
-    private SectionsPagerAdapter sectionsPagerAdapter;
-    private SocksProxy proxy;
-    private ConnectivityManager connectivityManager;
+
     final ConnectivityManager.NetworkCallback cbWifi = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(Network network) {
@@ -187,10 +189,8 @@ public class MainActivity extends AppCompatActivity {
                             configFragment.setError((String) msg.obj);
                             break;
                         case MSG_UPDATE_UI:
-                            Log.e("!!! UI", "update status");
                             configFragment.updateStatus();
                             if (connectionsFragment != null) {
-                                //Log.e(TAG, "notifyDataSetChanged");
                                 connectionsFragment.updateUI();
                             }
                             break;
@@ -200,16 +200,36 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        connectivityManager = (ConnectivityManager)
-                getSystemService(Context.CONNECTIVITY_SERVICE);
-        connectivityManager.requestNetwork(new NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .build(), cbWifi);
-        connectivityManager.requestNetwork(new NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                .build(), cbCellular);
+        initNetwork();
+        if (proxy == null) {
+            rebindProxy(null);
+        }
+    }
 
-        rebindProxy(null);
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable("proxy",proxy);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (savedInstanceState != null) {
+            proxy = (SocksProxy) savedInstanceState.getSerializable("proxy");
+        }
+    }
+
+    public void initNetwork() {
+        if (connectivityManager == null) {
+            connectivityManager = (ConnectivityManager)
+                    getSystemService(Context.CONNECTIVITY_SERVICE);
+            connectivityManager.requestNetwork(new NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                    .build(), cbWifi);
+            connectivityManager.requestNetwork(new NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    .build(), cbCellular);
+        }
     }
 
     public void removeConnection(Connection con) {
@@ -242,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 conn = new UDPConnection(Connection.Type.STATIC, MainActivity.wifiNet, MainActivity.cellNet, dstAddress, MainActivity.this);
             }
-            Log.e(TAG, "add connection");
+            //Log.e(TAG, "add connection");
             connections.add(0, conn);
             conn.listen(srcPort);
         } catch (IOException e) {

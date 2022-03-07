@@ -3,7 +3,6 @@ package com.modima.forwarder.ui;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,7 +94,7 @@ public class ConnectionsFragment extends Fragment {
                 int dstPort = Integer.parseInt(tvDstPort.getText().toString());
                 InetSocketAddress dstAddress = new InetSocketAddress(dstIP, dstPort);
                 ((MainActivity) getActivity()).addConnection(protocol, srcPort, dstAddress);
-                Log.e("CONNECTION FRAGMENT", "showNewConnectionDialog " + connectionAdapter);
+                //Log.e("CONNECTION FRAGMENT", "showNewConnectionDialog " + connectionAdapter);
                 connectionAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }

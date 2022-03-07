@@ -150,7 +150,7 @@ public class UDPConnection extends Connection{
                     this.dstAddress = new InetSocketAddress(targetAddress, port);
 
                     // start response thread
-                    Log.d("UDP", "forward udp packet to " + targetAddress.getHostAddress() + ":" + port + " | payload: " + bytes2String(payload));
+                    Log.d("UDP", "forward udp packet to " + targetAddress.getHostAddress() + ":" + port);
                     DatagramSocket ds = new DatagramSocket();
                     dstNet.bindSocket(ds);
                     new Thread(() -> {
@@ -185,7 +185,7 @@ public class UDPConnection extends Connection{
 
                     ds.send(new DatagramPacket(payload, payloadLen, targetAddress, port));
                     this.bytesSent += payloadLen;
-                    Log.d("UDP", "forward udp packet ok", null);
+                    //Log.d("UDP", "forward udp packet ok", null);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
