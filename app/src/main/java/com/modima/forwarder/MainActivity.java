@@ -1,6 +1,7 @@
 package com.modima.forwarder;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -30,21 +31,24 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final int MSG_ERROR = 0;
     public static final int MSG_UPDATE_UI = 1;
+    public static final int MSG_ADD_CONNECTION = 2;
+    public static final int MSG_REMOVE_CONNECTION = 3;
     static final String TAG = MainActivity.class.getName();
     public static Network wifiNet;
     public static Network cellNet;
     public static InetAddress wifiAddress;
     public static InetAddress cellAddress;
     public static Handler handler;
-    public static ArrayList<Connection> connections = new ArrayList<Connection>();
+    public static List<Connection> connections = new ArrayList<Connection>();
     public static SectionsPagerAdapter sectionsPagerAdapter;
     public static ConnectivityManager connectivityManager;
-    public static SocksProxy proxy;
+    //public static SocksProxy proxy;
 
     final ConnectivityManager.NetworkCallback cbCellular = new ConnectivityManager.NetworkCallback() {
         @Override
@@ -194,6 +198,12 @@ public class MainActivity extends AppCompatActivity {
                                 connectionsFragment.updateUI();
                             }
                             break;
+                        case MSG_ADD_CONNECTION:
+                            addConnection((Connection)msg.obj);
+                            break;
+                        case MSG_REMOVE_CONNECTION:
+                            removeConnection((Connection)msg.obj);
+                            break;
                     }
                 }
             });
@@ -201,11 +211,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         initNetwork();
-        if (proxy == null) {
-            rebindProxy(null);
-        }
+        rebindProxy(null);
     }
 
+    /*
     public void onSaveInstanceState(Bundle outState) {
         outState.putSerializable("proxy",proxy);
         super.onSaveInstanceState(outState);
@@ -218,6 +227,7 @@ public class MainActivity extends AppCompatActivity {
             proxy = (SocksProxy) savedInstanceState.getSerializable("proxy");
         }
     }
+    */
 
     public void initNetwork() {
         if (connectivityManager == null) {
@@ -258,9 +268,9 @@ public class MainActivity extends AppCompatActivity {
         try {
             Connection conn;
             if (proto == "tcp") {
-                conn = new TCPConnection(Connection.Type.STATIC, MainActivity.wifiNet, MainActivity.cellNet, dstAddress, MainActivity.this);
+                conn = new TCPConnection(Connection.Type.STATIC, MainActivity.wifiNet, MainActivity.cellNet, dstAddress);
             } else {
-                conn = new UDPConnection(Connection.Type.STATIC, MainActivity.wifiNet, MainActivity.cellNet, dstAddress, MainActivity.this);
+                conn = new UDPConnection(Connection.Type.STATIC, MainActivity.wifiNet, MainActivity.cellNet, dstAddress);
             }
             //Log.e(TAG, "add connection");
             connections.add(0, conn);
@@ -287,18 +297,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void rebindProxy(View view) {
-        try {
-            if (proxy != null) {
-                proxy.stop();
-            }
-            ConfigFragment cf = (ConfigFragment) sectionsPagerAdapter.getItem(0);
-            int port = cf.getSocksPort();
-            proxy = new SocksProxy(port, MainActivity.this);
-            proxy.start();
-            handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, ""));
-        } catch (IOException e) {
-            handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, e.getMessage()));
-            e.printStackTrace();
-        }
+        Context context = getApplicationContext();
+        ConfigFragment cf = (ConfigFragment) sectionsPagerAdapter.getItem(0);
+        int port = cf.getSocksPort();
+        Intent i= new Intent(context, SocksProxy.class);
+        i.putExtra("port", port);
+        context.startService(i);
+        handler.sendMessage(handler.obtainMessage(MainActivity.MSG_ERROR, 0, 0, ""));
     }
 }

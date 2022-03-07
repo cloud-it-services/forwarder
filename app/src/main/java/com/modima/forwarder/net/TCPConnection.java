@@ -1,6 +1,7 @@
 package com.modima.forwarder.net;
 
 import android.net.Network;
+import android.os.Message;
 import android.util.Log;
 
 import com.modima.forwarder.MainActivity;
@@ -18,15 +19,13 @@ public class TCPConnection extends Connection {
     static final String TAG = TCPConnection.class.getName();
 
     private ServerSocket serverSocket;
-    private MainActivity main;
     private boolean running;
 
-    public TCPConnection(Connection.Type type, Network srcNet, Network dstNet, InetSocketAddress dstAddr, MainActivity main) {
+    public TCPConnection(Connection.Type type, Network srcNet, Network dstNet, InetSocketAddress dstAddr) {
         super(type, Protocol.TCP);
         this.srcNet = srcNet;
         this.dstNet = dstNet;
         this.dstAddress = dstAddr;
-        this.main = main;
     }
 
     public void stop() {
@@ -80,7 +79,9 @@ public class TCPConnection extends Connection {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                main.removeConnection(this);
+                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
+                m.obj = this;
+                MainActivity.handler.sendMessage(m);
             }
         }).start();
 
@@ -99,7 +100,9 @@ public class TCPConnection extends Connection {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                main.removeConnection(this);
+                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
+                m.obj = this;
+                MainActivity.handler.sendMessage(m);
             }
         }).start();
 

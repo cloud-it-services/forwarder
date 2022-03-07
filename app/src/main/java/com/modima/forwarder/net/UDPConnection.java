@@ -18,15 +18,13 @@ public class UDPConnection extends Connection{
 
     private DatagramSocket srcSocket;
     private InetAddress srcAddress;
-    private MainActivity main;
     private int srcPort;
 
-    public UDPConnection(Connection.Type type, Network srcNet, Network dstNet, InetSocketAddress dstAddr, MainActivity main) {
+    public UDPConnection(Connection.Type type, Network srcNet, Network dstNet, InetSocketAddress dstAddr) {
         super(type, Protocol.UDP);
         this.srcNet = srcNet;
         this.dstNet = dstNet;
         this.dstAddress = dstAddr;
-        this.main = main;
     }
 
     @Override

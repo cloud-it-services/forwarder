@@ -1,8 +1,15 @@
 package com.modima.forwarder.net;
 
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import com.modima.forwarder.MainActivity;
+import com.modima.forwarder.R;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,25 +20,61 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class SocksProxy implements Serializable {
+public class SocksProxy extends Service implements Serializable {
 
     static final String TAG = SocksProxy.class.getName();
-
     public static final int BUFFER_SIZE = 4096;
     private ServerSocket srcSocket;
-    private MainActivity main;
-    private boolean running = true;
+    private boolean running;
 
-    public SocksProxy(int port, MainActivity main) throws IOException {
-        this.srcSocket = new ServerSocket(port);
-        this.main = main;
+    public SocksProxy() {
+    }
+
+    protected int byte2int(byte b) {
+        return b & 0xff;
+    }
+
+    public static String bytes2String(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        for (byte b : bytes) {
+            sb.append(String.format("0x%02X ", b));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        try {
+            int port = intent.getIntExtra("port", R.string.socks_port);
+            Log.e(TAG, "start socks proxy on port " + port);
+            if (this.srcSocket == null || this.srcSocket.isClosed() || this.srcSocket.getLocalPort() != port) {
+                this.stop();
+                if (this.srcSocket != null) this.srcSocket.close();
+                this.srcSocket = new ServerSocket(port);
+                this.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Service.START_NOT_STICKY;
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
     public void start() {
+        this.running = true;
         new Thread(() -> {
             try {
                 while (running) {
+                    Log.e("TAG", "--- start ---" + this.srcSocket.getLocalPort());
                     Socket s = this.srcSocket.accept();
+                    Log.e("TAG", "--- handle connection ---");
                     this.handleConnection(s);
                 }
             } catch (IOException e) {
@@ -124,10 +167,12 @@ public class SocksProxy implements Serializable {
                     case 1:
                         // create TCP Connection
                         Log.d(TAG, "TCP Connection to " + domainName + " " + targetIP + ":" + port + " requested");
-                        TCPConnection tcpCon = new TCPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port), main);
+                        TCPConnection tcpCon = new TCPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port));
                         tcpCon.listenPort = this.srcSocket.getLocalPort();
                         Socket dstSocket = tcpCon.connect(srcSocket);
-                        main.addConnection((tcpCon));
+                        Message mTCP = MainActivity.handler.obtainMessage(MainActivity.MSG_ADD_CONNECTION);
+                        mTCP.obj = tcpCon;
+                        MainActivity.handler.sendMessage(mTCP);
 
                         //Log.e(TAG, "Local TCP Address: " + dstSocket.getLocalSocketAddress().toString());
                         localIPBytes = dstSocket.getLocalAddress().getAddress();
@@ -141,14 +186,18 @@ public class SocksProxy implements Serializable {
                     case 3:
                         // create UDP Forwarding
                         Log.d(TAG, "UDP Forwarding requested");
-                        UDPConnection udpCon = new UDPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port), main);
+                        UDPConnection udpCon = new UDPConnection(Connection.Type.SOCKS5, MainActivity.wifiNet, MainActivity.cellNet, new InetSocketAddress(targetIP, port));
                         int udpPort = udpCon.listen(-1);
-                        main.addConnection(udpCon);
+                        Message mUDP = MainActivity.handler.obtainMessage(MainActivity.MSG_ADD_CONNECTION);
+                        mUDP.obj = udpCon;
+                        MainActivity.handler.sendMessage(mUDP);
                         sendResponse(srcSocket, MainActivity.wifiAddress.getAddress(), udpPort, (byte) 0);
                         // remove UDP Forwarding when main TCP socket is closed
-                        while(!(srcSocket.isClosed())){
+                        while (!(srcSocket.isClosed())) {
                             if (clientInStream.read() == -1) {
-                                main.removeConnection(udpCon);
+                                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
+                                m.obj = udpCon;
+                                MainActivity.handler.sendMessage(m);
                                 srcSocket.close();
                             }
                             Thread.sleep(100);
@@ -172,23 +221,23 @@ public class SocksProxy implements Serializable {
         response[1] = respCode; // response code
         response[2] = 0;        // reserved
 
-        Log.e("TAG","IP len: " + localIP.length);
+        //Log.e("TAG", "IP len: " + localIP.length);
 
         if (localIP.length == 4) {
             response[3] = 1;        // address type IPv4
             for (int i = 0; i < localIP.length; i++) {
-                response[4+i] = localIP[i];
+                response[4 + i] = localIP[i];
             }
         } else if (localIP.length == 16) {
             response[3] = 4;        // address type IPv6
             for (int i = 0; i < localIP.length; i++) {
-                response[4+i] = localIP[i];
+                response[4 + i] = localIP[i];
             }
         } else {
-            Log.e("TAG","Long IP (maybe domain name)");
+            Log.e("TAG", "Long IP (maybe domain name)");
         }
-        response[len-2] = (byte) (localPort >> 8);   // high byte port
-        response[len-1] = (byte) (localPort & 0xff); // low byte port
+        response[len - 2] = (byte) (localPort >> 8);   // high byte port
+        response[len - 1] = (byte) (localPort & 0xff); // low byte port
 
         //Log.d(TAG, "socks response: " + bytes2String(response));
         try {
@@ -198,19 +247,5 @@ public class SocksProxy implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public static String bytes2String(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[ ");
-        for (byte b : bytes) {
-            sb.append(String.format("0x%02X ", b));
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    protected int byte2int(byte b) {
-        return b & 0xff;
     }
 }

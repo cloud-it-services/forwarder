@@ -12,11 +12,11 @@ import com.modima.forwarder.R;
 import com.modima.forwarder.net.Connection;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.List;
 
 public class ConnectionAdapter extends ArrayAdapter<Connection> implements Serializable {
 
-    public ConnectionAdapter(Context context, ArrayList<Connection> connections) {
+    public ConnectionAdapter(Context context, List<Connection> connections) {
         super(context, R.layout.item_connection, connections);
     }
 
