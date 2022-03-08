@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.modima.forwarder.MainActivity;
@@ -27,22 +28,29 @@ public class ConnectionAdapter extends ArrayAdapter<Connection> implements Seria
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_connection, parent, false);
         }
 
-        convertView.findViewById(R.id.deleteConnection).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity)getContext()).deleteConnection(position);
-                notifyDataSetChanged();
-            }
-        });
-
         // Lookup view for data population
         TextView tvCInfo = (TextView) convertView.findViewById(R.id.connectionInfo);
         TextView tvDInfo = (TextView) convertView.findViewById(R.id.destinationInfo);
         TextView tvStats = (TextView) convertView.findViewById(R.id.connectionStats);
+        ImageButton btnDeleteCon = (ImageButton) convertView.findViewById(R.id.deleteConnection);
 
         // Get the data item for this position
         try {
             Connection connection = getItem(position);
+
+            if (connection.type == Connection.Type.STATIC) {
+                btnDeleteCon.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ((MainActivity)getContext()).deleteConnection(position);
+                        notifyDataSetChanged();
+                    }
+                });
+            } else {
+                // hide delete button on non static connections
+                btnDeleteCon.setVisibility(View.INVISIBLE);
+            }
+
             String cInfo = connection.type + "/" + connection.proto.toString() + ": " + connection.listenPort;
             tvCInfo.setText(cInfo);
 
