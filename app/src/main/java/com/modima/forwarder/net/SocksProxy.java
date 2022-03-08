@@ -48,7 +48,7 @@ public class SocksProxy extends Service implements Serializable {
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
             int port = intent.getIntExtra("port", R.string.socks_port);
-            Log.e(TAG, "start socks proxy on port " + port);
+            Log.d(TAG, "start SOCKS5 proxy on port " + port);
             if (this.srcSocket == null || this.srcSocket.isClosed() || this.srcSocket.getLocalPort() != port) {
                 this.stop();
                 if (this.srcSocket != null) this.srcSocket.close();
@@ -72,9 +72,7 @@ public class SocksProxy extends Service implements Serializable {
         new Thread(() -> {
             try {
                 while (running) {
-                    Log.e("TAG", "--- start ---" + this.srcSocket.getLocalPort());
                     Socket s = this.srcSocket.accept();
-                    Log.e("TAG", "--- handle connection ---");
                     this.handleConnection(s);
                 }
             } catch (IOException e) {
@@ -194,8 +192,10 @@ public class SocksProxy extends Service implements Serializable {
                         sendResponse(srcSocket, MainActivity.wifiAddress.getAddress(), udpPort, (byte) 0);
                         // remove UDP Forwarding when main TCP socket is closed
                         while (!(srcSocket.isClosed())) {
+                            //Log.d(TAG, "...wait for socket close");
                             if (clientInStream.read() == -1) {
-                                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
+                                //Log.d(TAG, "!!! SOCKET WAS CLOSED");
+                                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_REMOVE_CONNECTION);
                                 m.obj = udpCon;
                                 MainActivity.handler.sendMessage(m);
                                 srcSocket.close();

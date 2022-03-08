@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
     public static List<Connection> connections = new ArrayList<Connection>();
     public static SectionsPagerAdapter sectionsPagerAdapter;
     public static ConnectivityManager connectivityManager;
-    //public static SocksProxy proxy;
 
     final ConnectivityManager.NetworkCallback cbCellular = new ConnectivityManager.NetworkCallback() {
         @Override
@@ -183,28 +182,27 @@ public class MainActivity extends AppCompatActivity {
         });
 
         handler = new Handler(msg -> {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    ConfigFragment configFragment = (ConfigFragment) sectionsPagerAdapter.getItem(0);
-                    ConnectionsFragment connectionsFragment = (ConnectionsFragment) sectionsPagerAdapter.getItem(1);
-                    switch (msg.what) {
-                        case MSG_ERROR:
-                            configFragment.setError((String) msg.obj);
-                            break;
-                        case MSG_UPDATE_UI:
-                            configFragment.updateStatus();
-                            if (connectionsFragment != null) {
-                                connectionsFragment.updateUI();
-                            }
-                            break;
-                        case MSG_ADD_CONNECTION:
-                            addConnection((Connection)msg.obj);
-                            break;
-                        case MSG_REMOVE_CONNECTION:
-                            removeConnection((Connection)msg.obj);
-                            break;
-                    }
+            runOnUiThread(() -> {
+                ConfigFragment configFragment = (ConfigFragment) sectionsPagerAdapter.getItem(0);
+                ConnectionsFragment connectionsFragment = (ConnectionsFragment) sectionsPagerAdapter.getItem(1);
+                switch (msg.what) {
+                    case MSG_ERROR:
+                        configFragment.setError((String) msg.obj);
+                        break;
+                    case MSG_UPDATE_UI:
+                        configFragment.updateStatus();
+                        if (connectionsFragment != null) {
+                            connectionsFragment.updateUI();
+                        }
+                        break;
+                    case MSG_ADD_CONNECTION:
+                        addConnection((Connection)msg.obj);
+                        break;
+                    case MSG_REMOVE_CONNECTION:
+                        removeConnection((Connection)msg.obj);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected msg: " + msg.what);
                 }
             });
             return true;
@@ -247,6 +245,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 connections.remove(con);
+                //Log.e(TAG, "remove connection " +  con.type);
+                //Log.e(TAG, connections.size() + " connections remaining");
                 ConnectionsFragment connectionsFragment = (ConnectionsFragment) sectionsPagerAdapter.getItem(1);
                 connectionsFragment.updateUI();
             }

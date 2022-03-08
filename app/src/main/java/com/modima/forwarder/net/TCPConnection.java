@@ -79,7 +79,7 @@ public class TCPConnection extends Connection {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
+                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_REMOVE_CONNECTION);
                 m.obj = this;
                 MainActivity.handler.sendMessage(m);
             }
@@ -96,11 +96,10 @@ public class TCPConnection extends Connection {
                     MainActivity.handler.sendMessage(MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI));
                 }
                 srcOutputStream.flush();
-                // remove from view
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_UPDATE_UI);
+                Message m = MainActivity.handler.obtainMessage(MainActivity.MSG_REMOVE_CONNECTION);
                 m.obj = this;
                 MainActivity.handler.sendMessage(m);
             }

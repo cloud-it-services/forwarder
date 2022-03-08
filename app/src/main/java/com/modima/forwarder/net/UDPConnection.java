@@ -156,7 +156,7 @@ public class UDPConnection extends Connection{
                         while (true) {
                             try {
                                 DatagramPacket serverResponse = new DatagramPacket(respBuf, respBuf.length);
-                                Log.d("UDP", "... await response", null);
+                                //Log.d("UDP", "... await response", null);
                                 ds.receive(serverResponse);
                                 this.dstAddress = new InetSocketAddress(serverResponse.getAddress(), serverResponse.getPort());
 
