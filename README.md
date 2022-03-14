@@ -1,4 +1,5 @@
-# Socks5 Proxy for Android Devices to forward packets from wifi network to cellular network
+# Socks5 Proxy for Android Devices
+- to forward packets from wifi network to cellular network
 
 ## Use with redsocks (https://github.com/darkk/redsocks)
 
